@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  bot:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: instagram_bot_v2
+    restart: unless-stopped
+    
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./sessions:/app/sessions
+    
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ADMIN_TELEGRAM_ID=${ADMIN_TELEGRAM_ID}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DATABASE_PATH=sqlite:////app/data/bot_database.db
+      - MAX_REQUESTS_PER_HOUR=${MAX_REQUESTS_PER_HOUR:-200}
+      - MAX_ACTIVE_SCENARIOS=${MAX_ACTIVE_SCENARIOS:-2}
+      - ENABLE_TIKTOK=${ENABLE_TIKTOK:-true}
+      - TZ=${TZ:-UTC}
+    
+    networks:
+      - bot_network
+    
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('/app/data') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  bot_network:
+    driver: bridge
